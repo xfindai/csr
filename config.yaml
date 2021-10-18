@@ -1,0 +1,37 @@
+Retrievers:
+  - source_name: ArticleSource
+    type: zendesk_articles
+    enabled: true
+    credneitlas:
+      host:
+      user:
+      password:
+    fields:
+      -
+    post_retrieval_actions:
+      - function: remove_emails, 
+        fields:
+          - description
+          - comments
+      - funciton: remove_phone_numbers
+        fields:
+      
+
+  - source_name: ArticleSource
+    type: zendesk_articles
+    credneitlas:
+      host:
+      user:
+      password:
+    fields:
+      -
+    post_retrieval_actions:
+      - remove_emails
+      - remove_phone_numbers
+      - my_custom_function
+
+Target:
+  host: xfindopen.laj93sj.amaonz.om
+  user:
+  password:
+  table:
