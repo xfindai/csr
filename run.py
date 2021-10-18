@@ -2,6 +2,7 @@ from utils import read_yaml
 from retrievers import retrievers
 
 config = read_yaml('./config.yaml')
+log = []
 
 for retriever in config['Retrievers']:
 
