@@ -17,7 +17,7 @@ def retrieve(config: dict, start_time: dict):
             continue
 
         # get the retriever class
-        retriever_class =  RETRIEVERS.get(retriever_config['type'].lower())
+        retriever_class = RETRIEVERS.get(retriever_config['type'].lower())
         if not retriever_class:
             print(f"Retriever {retriever_config['type']} not found")
             continue
@@ -36,11 +36,7 @@ def retrieve(config: dict, start_time: dict):
 
 if __name__ == '__main__':
     options = create_argparser().parse_args()
-
     config = read_yaml(CONFIG_FILENAME)
-
     start_time = get_start_time(options.starttime)
-
     conn = psycopg2.connect(**config['Target'])
-
     retrieve(config, start_time)

@@ -1,3 +1,4 @@
+import os
 import yaml
 import dateutil
 import datetime
@@ -62,8 +63,27 @@ def get_start_time(start_time: str = None) -> datetime:
 
     if start_time:
         return dateutil.parser.parse(start_time)
-    else:
-        return datetime.datetime.now() - datetime.timedelta(days=1)
+
+    try:
+        file = open('pull_history.txt', 'r')
+        date_str = file.readline()
+        return dateutil.parser.parse(date_str)
+    except Exception:
+        pass
+
+    return datetime.datetime.now() - datetime.timedelta(days=1)
+
+
+def dump_date():
+    """Dump date
+    dumps the date of the latest successfull pull to file
+    """
+    try:
+        file = open('pull_history.txt', 'w')
+        file.write(datetime.datetime.now())
+        return True
+    except Exception:
+        return False
 
 
 def create_cursor(self, conn: psycopg2.connect, name: str = "default", itersize: int = 1000):
@@ -100,15 +120,37 @@ def prepare_post_action_field_map(config: list) -> dict:
     return result
 
 
-def apply_actions_on_field(k, v, post_action_map):
+def apply_actions_on_field(k: str, v: str, post_action_map: dict) -> str:
+    """ apply actions on fields
+    applies anonimization function to field value by its key
 
-    for func in post_action_map['_all'] + post_action_map.get(k, []):
+    Args:
+        k (str): jey of the field
+        v (str): value if the field
+        post_action_map (dict): field to function mapper
+
+    Returns:
+        str: altered value
+    """
+
+    for func in post_action_map['_all'] + post_action_map.get(k, []) or []:
         v = FUNCTIONS[func](v)
 
     return v
 
 
 def apply_post_actions(data: object, key: str = None, post_action_map: dict = None) -> dict:
+    """ Apply actions on fields
+    Simple recursion which traverses a dictionary and applies functions on the string values
+
+    Args:
+        data (object): the root dictionary to traverse
+        key (str, optional): Key of the sub dictionary. Defaults to None.
+        post_action_map (dict, optional): post action dict which maps fields to functions.
+
+        Returns:
+        dict: the altered dictionary
+    """
 
     if isinstance(data, str):
         return apply_actions_on_field(key, data, post_action_map)
