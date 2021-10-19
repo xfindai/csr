@@ -3,6 +3,9 @@ import dateutil
 import datetime
 from pathlib import Path
 import argparse
+import psycopg2
+from collections import defaultdict
+from post_actions import FUNCTIONS
 
 
 def read_yaml(path: Path) -> dict:
@@ -61,3 +64,62 @@ def get_start_time(start_time: str = None) -> datetime:
         return dateutil.parser.parse(start_time)
     else:
         return datetime.datetime.now() - datetime.timedelta(days=1)
+
+
+def create_cursor(self, conn: psycopg2.connect, name: str = "default", itersize: int = 1000):
+    """Create cursor
+    creates named cursor and sets the itersize
+    Args:
+
+    conn (psycopg2.connect): connection for the cursor creation
+    name (str): cursor name
+    itersize (int, optional): batch size. Defaults to 1000.
+
+    Returns:
+        psycopg2.extras.DictCursor: cursor
+    """
+    cursor = conn.cursor(
+        name=name,
+        cursor_factory=psycopg2.extras.DictCursor
+    )
+    cursor.itersize = itersize
+    return cursor
+
+
+def prepare_post_action_field_map(config: list) -> dict:
+    result = defaultdict(list)
+
+    for action in config:
+        function_name = action.get('function')
+        if action.get('apply_to_all'):
+            result['_all'].append(function_name)
+        else:
+            for field in action.get('fields', []) or []:
+                result[field].append(function_name)
+
+    return result
+
+
+def apply_actions_on_field(k, v, post_action_map):
+
+    for func in post_action_map['_all'] + post_action_map.get(k, []):
+        v = FUNCTIONS[func](v)
+
+    return v
+
+
+def apply_post_actions(data: object, key: str = None, post_action_map: dict = None) -> dict:
+
+    if isinstance(data, str):
+        return apply_actions_on_field(key, data, post_action_map)
+
+    elif isinstance(data, list):
+        new_data = []
+        for item in data:
+            new_data.append(apply_post_actions(item, key, post_action_map))
+        return new_data
+
+    elif isinstance(data, dict):
+        for k, v in data.items():
+            data[k] = apply_post_actions(v, k, post_action_map)
+        return data

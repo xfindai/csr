@@ -18,8 +18,6 @@ import logging
 from datetime import datetime
 from zenpy import Zenpy
 from typing import Generator
-from datamanager.models import DataUpdate
-from .retriever import Retriever
 
 
 logger = logging.getLogger('main')
@@ -28,14 +26,16 @@ logger = logging.getLogger('main')
 COMMENT_FIELDS = ["author_id", "body", "id", "public", "type", "created_at"]
 
 
-class ZendeskTickets(Retriever):
+class ZendeskTickets():
     """Zendesk Tickets
     Retriever
     """
 
-    def __init__(self, source: str, update_record: DataUpdate, ignore_deleted: bool,
-                 credentials: dict, max_items: int = None):
-        super().__init__(source, update_record, ignore_deleted)
+    def __init__(self, source: str, start_time: datetime, ignore_deleted: bool = True,
+                 credentials: dict = {}, max_items: int = None):
+        #super().__init__(source, update_record, ignore_deleted)
+        self._ignore_deleted = ignore_deleted
+        self._start_time = start_time
         self._credentials = credentials
         self._max_items = max_items
         self._client = None

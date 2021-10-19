@@ -17,16 +17,13 @@ import logging
 import requests
 
 from datetime import datetime
-from datamanager.models import DataUpdate, RawItem
-from .utils import set_deleted
-from .retriever import Retriever
 
 
 logger = logging.getLogger('main')
 DEF_SOURCE = 'ArticleSource'
 
 
-class ZendeskArticles(Retriever):
+class ZendeskArticles():
     """Zendesk Articles
     Retriever
     """
@@ -36,7 +33,7 @@ class ZendeskArticles(Retriever):
     CATEGORIES_API = 'https://{}.zendesk.com/api/v2/help_center/categories.json'
     SECTIONS_API = 'https://{}.zendesk.com/api/v2/help_center/sections.json'
 
-    def __init__(self, source: str, update_record: DataUpdate, ignore_deleted: bool,
+    def __init__(self, source: str, ignore_deleted: bool,
                  subdomain: str, locale: str, credentials: dict, max_items: int = None):
         super().__init__(source, update_record, ignore_deleted)
         self._subdomain = subdomain
