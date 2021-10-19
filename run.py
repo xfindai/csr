@@ -1,16 +1,30 @@
-from utils import read_yaml
+from utils import read_yaml, create_argparser
 from retrievers import retrievers
+import psycopg2
+import dateutil
 
-config = read_yaml('./config.yaml')
-log = []
 
-for retriever in config['Retrievers']:
+def handle(options: dict):
+    config = read_yaml('./config.yaml')
 
-    if not retriever.get('enabled', False):
-        continue
+    for retriever in config['Retrievers']:
 
-    if func := retrievers.get(retriever['type']):
-        func(retriever)
+        if not retriever.get('enabled', False):
+            continue
 
-    print(retriever['type'])
+        if func := retrievers.get(retriever['type']):
+            func(retriever)
+
+        print(retriever['type'])
+
+
+if __name__ == '__main__':
+    args = create_argparser().parse_args()
+    print(args)
+    config = read_yaml('./config.yaml')
+    
+    if args['starttime']:
+        start_time = 
+    
+    conn = psycopg2.connect(**config['Target'])
 

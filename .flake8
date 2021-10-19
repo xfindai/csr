@@ -1,0 +1,69 @@
+[testenv:pep8]
+deps = flake8
+       flake8-django
+       flake8-import-order
+       flake8-blind-except
+       flake8-builtins
+       flake8-docstrings
+       flake8-rst-docstrings
+       flake8-logging-format
+commands = flake8
+
+[flake8]
+
+################### FORMATTING ###################
+# Select the formatter used to display errors to the user.
+format = default
+# Print the total number of errors.
+count = True
+# Print the source code generating the error/warning in question.
+show-source = True
+# Count the number of occurrences of each error/warning code and print a report.
+statistics = True
+
+################### FILE PATTERNS ##########################
+
+# Provide a comma-separated list of glob patterns to exclude from checks.
+exclude = .git,__pycache__,venv,*versions*,app.py,env.py,settings*,*migrations*
+# Provide a comma-separate list of glob patterns to include for checks.
+filename = *.py
+
+################### LINTING ################################
+
+########## ENVIRONMENT ##########
+# Provide a custom list of builtin functions, objects, names, etc.
+builtins =
+
+########## OPTIONS ##########
+# Report all errors, even if it is on the same line as a `# NOQA` comment.
+disable-noqa = False
+# Set the maximum length that any line (with some exceptions) may be.
+max-line-length = 100
+# Set the maximum allowed McCabe complexity value for a block of code.
+max-complexity = 10
+
+########## RULES ##########
+# ERROR CODES
+# E/W  - PEP8 errors/warnings (pycodestyle)
+# F    - linting errors (pyflakes)
+# C    - McCabe complexity error (mccabe)
+#
+# W503 - line break before binary operator
+
+; import-order-style = smarkets
+
+# Specify a list of codes to ignore.
+ignore = W503,D100,D104,D105,D106,D107,D202,D204,D205,D400,D401,D413,I100,I201,DJ02,F401,DJ01
+# Specify the list of error codes you wish Flake8 to report.
+; select = E,W,F,C
+# Enable off-by-default extensions.
+enable-extensions = G
+application-import-names = xfind
+; docstring-convention = numpy
+# Enable PyFlakes syntax checking of doctests in docstrings.
+doctests = True
+# Specify which files are checked by PyFlakes for doctest syntax.
+; include-in-doctest =
+# Specify which files are not to be checked by PyFlakes for doctest syntax.
+# exclude-in-doctest =
+
