@@ -6,32 +6,33 @@ import psycopg2
 import sys
 
 
-CONFIG_FILENAME = 'config.yaml'
-
-
 # main retrieving loop
 def retrieve(config: dict, start_time: dict, cursor):
 
     for retriever_config in config['Retrievers']:
         total_success = total_failures = 0
 
-        # if retriever is disabled in config, proceed to the next retriever
+        # If retriever is disabled in config, proceed to the next retriever
         if not retriever_config.get('enabled', False):
             continue
 
         print(f"Starting pulling {retriever_config['source_name']}")
-        # prepare post actions instructions map
+        # Prepare post actions instructions map
         post_action_map = prepare_post_actions_field_map(retriever_config['post_retrieval_actions'])
-        # get the retriever class
+        # Get the retriever class
         retriever_class = RETRIEVERS.get(retriever_config['type'].lower())
 
+        # No retriever was found, proceed to the next source
         if not retriever_class:
             print(f"Retriever {retriever_config['type']} not found")
             continue
 
+        # Initiate the retriever with config params
         retriever = retriever_class(source=retriever_config['source_name'],
                                     start_time=start_time, ignore_deleted=True,
                                     **retriever_config['params'])
+
+        # Start iterating over the retrieved batches, and handle them
         for results_batch in retriever:
             success, failures = handle_results_batch(results_batch,
                                                      retriever_config['source_name'],

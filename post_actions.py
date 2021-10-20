@@ -1,6 +1,7 @@
 
 import re
 import string
+import phonenumbers
 
 from pathlib import Path
 from hashlib import sha256
@@ -22,6 +23,22 @@ DEF_EMAIL_REGEX = (
 EMAIL_REGEX = re.compile(DEF_EMAIL_REGEX)
 
 ANONYMIZATION_KEY = 'GO3fsF@WEB3DqWh'
+
+def _anonymize_token(token: str) -> str:
+    """Anonymize Token
+    Receives a token to anonymize (like a name) and returns it's anonymized (hashed) version.
+    Uses ANONYMIZATION_KEY defined in settings.py/env.py files.
+    This function is a duplicate from Data Manager.
+
+    Args:
+        token (str): String to anonymize.
+
+    Returns:
+        str: Anonymized token.
+    """
+    string = f'{ANONYMIZATION_KEY}{token}'.encode('utf-8')
+    return f"{PREFIX}{sha256(string).hexdigest()}"
+
 
 def anonymize(content: str) -> str:
     """Anonymize
@@ -53,19 +70,21 @@ def anonymize(content: str) -> str:
     return ' '.join(process_token(t) for t in content.split())
 
 
-def _anonymize_token(token: str) -> str:
-    """Anonymize Token
-    Receives a token to anonymize (like a name) and returns it's anonymized (hashed) version.
-    Uses ANONYMIZATION_KEY defined in settings.py/env.py files.
-    This function is a duplicate from Data Manager.
-
+def anonymize_phone_numbers(content: str) -> str:
+    """Anonymize_phone_numbers
+    Detects and replaces phone numbers with a anonymizaion token
     Args:
-        token (str): String to anonymize.
+        content (str): String to anonymize.
 
     Returns:
-        str: Anonymized token.
+        str: Anonymized String
     """
-    string = f'{ANONYMIZATION_KEY}{token}'.encode('utf-8')
-    return f"{PREFIX}{sha256(string).hexdigest()}"
+    for match in phonenumbers.PhoneNumberMatcher(content, "US"):
+        token = _anonymize_token(match.number)
+        content.replace(match.number, token)
+    return content
 
-FUNCTIONS = {'anonymize': anonymize}
+
+FUNCTIONS = {'anonymize': anonymize,
+             'anonymize_phone_numbers': anonymize_phone_numbers
+            }
