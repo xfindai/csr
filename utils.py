@@ -171,14 +171,14 @@ def apply_post_actions(data: object, key: str = None, post_action_map: dict = No
     return data
 
 
-def dump_results_to_db(results: str, source: str, cursor):
+def dump_results_to_db(results: list, source: str, cursor: psycopg2.Cursor):
     """Dump results to DB
     Dumps results batch to DB
 
     Args:
-        results (str): [description]
-        source (str): [description]
-        cursor ([type]): [description]
+        results (list): List of results
+        source (str): Source name
+        cursor (psycopg2.Cursor): DB connection cursor
     """
 
     def get_create_at(item):
@@ -194,11 +194,9 @@ def dump_results_to_db(results: str, source: str, cursor):
         created_at = get_create_at(item)
         deleted = item.get('deleted', False) or False
 
-        data = (source, iid, title, created_at, Json(item), 1, deleted)
+        sql = "INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, "\
+              "deleted) VALUES (%s, %s, %s, %s, %s, %s, %s)"
 
-        sql = f"INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, deleted) "\
-              f"VALUES (%s, %s, %s, %s, %s, %s, %s)"
-
-        cursor.execute(sql, data)
+        cursor.execute(sql, (source, iid, title, created_at, Json(item), 1, deleted))
 
     cursor.execute('commit')
