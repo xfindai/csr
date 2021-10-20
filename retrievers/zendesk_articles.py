@@ -33,9 +33,10 @@ class ZendeskArticles():
     CATEGORIES_API = 'https://{}.zendesk.com/api/v2/help_center/categories.json'
     SECTIONS_API = 'https://{}.zendesk.com/api/v2/help_center/sections.json'
 
-    def __init__(self, source: str, ignore_deleted: bool,
+    def __init__(self, source: str, start_time: datetime, ignore_deleted: bool,
                  subdomain: str, locale: str, credentials: dict, max_items: int = None):
-        super().__init__(source, update_record, ignore_deleted)
+        self._ignore_deleted = ignore_deleted
+        self._start_time = start_time
         self._subdomain = subdomain
         self._locale = locale or 'en-us'
         self._credentials = credentials

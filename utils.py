@@ -109,7 +109,17 @@ def create_cursor(conn: psycopg2.connect, name: str = "default", itersize: int =
     return cursor
 
 
-def prepare_post_action_field_map(config: list) -> dict:
+def prepare_post_actions_field_map(config: list) -> dict:
+    """Preparepost post actions field map
+    Constructs a dictionary with fields as keys. The values are lists of functions to be applied
+    to the field
+
+    Args:
+        config (list): configuration dict
+
+    Returns:
+        dict: the post actions field map
+    """
     result = defaultdict(list)
 
     for action in config:
@@ -225,4 +235,3 @@ def handle_results_batch(results_batch, source_name: str, post_action_map: dict,
     for result in results_batch:
         result = apply_post_actions(result, None, post_action_map)
     return dump_results_to_db(results_batch, source_name, cursor)
-
