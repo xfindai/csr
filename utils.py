@@ -83,7 +83,7 @@ def dump_date():
     """
     try:
         file = open('pull_history.txt', 'w')
-        file.write(datetime.datetime.now())
+        file.write(datetime.datetime.now().strftime("%m/%d/%Y"))
         return True
     except Exception:
         return False
@@ -125,7 +125,7 @@ def prepare_post_action_field_map(config: list) -> dict:
 
 def apply_actions_on_field(k: str, v: str, post_action_map: dict) -> str:
     """ apply actions on fields
-    applies anonimization function to field value by its key
+    applies anonymization function to field value by its key
 
     Args:
         k (str): jey of the field
@@ -171,17 +171,19 @@ def apply_post_actions(data: object, key: str = None, post_action_map: dict = No
     return data
 
 
-def dump_results_to_db(results: list, source: str, cursor: psycopg2.Cursor):
+def dump_results_to_db(results: list, source_name: str, cursor):
     """Dump results to DB
     Dumps results batch to DB
 
     Args:
         results (list): List of results
-        source (str): Source name
+        source_name (str): Source name
         cursor (psycopg2.Cursor): DB connection cursor
     """
+    success = failures = 0
 
     def get_create_at(item):
+        """sets the created_at field with the correct UTC timezone"""
         created_at = dateutil.parser.parse(item['created_at'])
         if not created_at.tzinfo:
             created_at = pytz.utc.localize(created_at)
@@ -195,8 +197,32 @@ def dump_results_to_db(results: list, source: str, cursor: psycopg2.Cursor):
         deleted = item.get('deleted', False) or False
 
         sql = "INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, "\
-              "deleted) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+              "deleted) VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (source, item_id) "\
+              "DO UPDATE SET (title, json) = (EXCLUDED.title, EXCLUDED.json)"
+        try:
+            cursor.execute(sql, (source_name, iid, title, created_at, Json(item), 1, deleted))
+            cursor.execute('commit')
+            success += 1
+        except Exception as e:
+            print(e)
+            failures += 1
 
-        cursor.execute(sql, (source, iid, title, created_at, Json(item), 1, deleted))
+    return success, failures
 
-    cursor.execute('commit')
+
+def handle_results_batch(results_batch, source_name: str, post_action_map: dict, cursor):
+    """Handle results batch
+    handles a bath of results. Applies post actions and dumps to db
+    Args:
+        results_batch (Iterator): [description]
+        source_name (str): [description]
+        post_action_map (dict): [description]
+        cursor ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    for result in results_batch:
+        result = apply_post_actions(result, None, post_action_map)
+    return dump_results_to_db(results_batch, source_name, cursor)
+
