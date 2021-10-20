@@ -1,37 +1,57 @@
 Retrievers:
-  - source_name: ArticleSource
-    type: zendesk_articles
-    enabled: true
-    credneitlas:
-      host:
-      user:
-      password:
-    fields:
-      -
+  - source_name: ZendeskSource
+    type: ZendeskTickets
+    enabled: false
+    params:
+      credentials:
+        email:
+        token:
+        subdomain:
+
+    custom_fields:
+    excempt_fields:
+
     post_retrieval_actions:
-      - function: remove_emails, 
-        fields:
-          - description
-          - comments
-      - funciton: remove_phone_numbers
-        fields:
-      
+      - function: anonymize
+        apply_to_all: true
+        # fields:
+        #   - field 1
+        #   - field 2
 
   - source_name: ArticleSource
-    type: zendesk_articles
-    credneitlas:
-      host:
-      user:
-      password:
-    fields:
-      -
+    type: ZendeskArticles
+    enabled: true
+    params:
+      subdomain:
+      locale: en-us
+      credentials:
+        username:
+        password:
+
     post_retrieval_actions:
-      - remove_emails
-      - remove_phone_numbers
-      - my_custom_function
+      - function: anonymize
+        apply_to_all: true
+
+  - source_name: JiraSource
+    type: Jira
+    enabled: true
+    params:
+      credentials:
+        username:
+        password:
+        url:
+      projects:
+        - Project1
+
+    post_retrieval_actions:
+      - function: anonymize
+        apply_to_all: true
 
 Target:
-  host: xfindopen.laj93sj.amaonz.om
+  host:
+  dbname:
   user:
   password:
-  table:
+
+
+
