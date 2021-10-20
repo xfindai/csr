@@ -21,7 +21,7 @@ DEF_EMAIL_REGEX = (
 
 EMAIL_REGEX = re.compile(DEF_EMAIL_REGEX)
 
-ANONYMIZATION_KEY = 'adsacasdfafvab'
+ANONYMIZATION_KEY = 'GO3fsF@WEB3DqWh'
 
 def anonymize(content: str) -> str:
     """Anonymize

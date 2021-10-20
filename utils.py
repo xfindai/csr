@@ -1,10 +1,13 @@
 import os
 import yaml
+import json
+import pytz
 import dateutil
 import datetime
 from pathlib import Path
 import argparse
 import psycopg2
+from psycopg2.extras import Json
 from collections import defaultdict
 from post_actions import FUNCTIONS
 
@@ -86,7 +89,7 @@ def dump_date():
         return False
 
 
-def create_cursor(self, conn: psycopg2.connect, name: str = "default", itersize: int = 1000):
+def create_cursor(conn: psycopg2.connect, name: str = "default", itersize: int = 1000):
     """Create cursor
     creates named cursor and sets the itersize
     Args:
@@ -132,7 +135,6 @@ def apply_actions_on_field(k: str, v: str, post_action_map: dict) -> str:
     Returns:
         str: altered value
     """
-
     for func in post_action_map['_all'] + post_action_map.get(k, []) or []:
         v = FUNCTIONS[func](v)
 
@@ -165,3 +167,38 @@ def apply_post_actions(data: object, key: str = None, post_action_map: dict = No
         for k, v in data.items():
             data[k] = apply_post_actions(v, k, post_action_map)
         return data
+
+    return data
+
+
+def dump_results_to_db(results: str, source: str, cursor):
+    """Dump results to DB
+    Dumps results batch to DB
+
+    Args:
+        results (str): [description]
+        source (str): [description]
+        cursor ([type]): [description]
+    """
+
+    def get_create_at(item):
+        created_at = dateutil.parser.parse(item['created_at'])
+        if not created_at.tzinfo:
+            created_at = pytz.utc.localize(created_at)
+        return created_at
+
+    for item in results:
+
+        iid = item.get('id')
+        title = item.get('title') or item.get('subject')
+        created_at = get_create_at(item)
+        deleted = item.get('deleted', False) or False
+
+        data = (source, iid, title, created_at, Json(item), 1, deleted)
+
+        sql = f"INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, deleted) "\
+              f"VALUES (%s, %s, %s, %s, %s, %s, %s)"
+
+        cursor.execute(sql, data)
+
+    cursor.execute('commit')

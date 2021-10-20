@@ -1,4 +1,6 @@
-from utils import read_yaml, create_argparser, get_start_time, prepare_post_action_field_map, apply_post_actions
+from utils import read_yaml, create_argparser, get_start_time, prepare_post_action_field_map, \
+    apply_post_actions, dump_results_to_db, create_cursor
+
 from retrievers import RETRIEVERS
 import psycopg2
 import pprint
@@ -7,7 +9,7 @@ import pprint
 CONFIG_FILENAME = 'config.yaml'
 
 
-def retrieve(config: dict, start_time: dict):
+def retrieve(config: dict, start_time: dict, cursor):
     config = read_yaml('./config.yaml')
 
     for retriever_config in config['Retrievers']:
@@ -29,7 +31,7 @@ def retrieve(config: dict, start_time: dict):
         for results_batch in retriever:
             for result in results_batch:
                 result = apply_post_actions(result, None, post_action_map)
-
+                dump_results_to_db([result], retriever_config['source_name'], cursor)
 
 # def dump_results_to_db(results, cursor):
 
@@ -39,4 +41,5 @@ if __name__ == '__main__':
     config = read_yaml(CONFIG_FILENAME)
     start_time = get_start_time(options.starttime)
     conn = psycopg2.connect(**config['Target'])
-    retrieve(config, start_time)
+    cursor = conn.cursor()
+    retrieve(config, start_time, cursor)
