@@ -3,6 +3,7 @@ from utils import read_yaml, create_argparser, get_start_time, prepare_post_acti
 
 from retrievers import RETRIEVERS
 import psycopg2
+import sys
 
 
 CONFIG_FILENAME = 'config.yaml'
@@ -42,17 +43,22 @@ def retrieve(config: dict, start_time: dict, cursor):
         print()
         print(
             f"Done pulling {retriever_config['source_name']}. Successfully pulled "\
-            f"{total_success} items, {failures} items failed")
+            f"{total_success} items, {total_failures} items failed")
 
     # Dumps date of last sussesfull pull
     dump_date()
 
-# def dump_results_to_db(results, cursor):
-
 
 if __name__ == '__main__':
+    # Parses runtime arguments and runs retriever
+
     options = create_argparser().parse_args()
-    config = read_yaml(CONFIG_FILENAME)
+
+    config = read_yaml(options.config)
+    if not config:
+        print(f'could not open configuration file {options.config}')
+        sys.exit(0)
+
     start_time = get_start_time(options.starttime)
 
     try:
@@ -60,6 +66,6 @@ if __name__ == '__main__':
         cursor = conn.cursor()
     except Exception as e:
         print(e)
-        exit(1)
+        sys.exit(0)
 
     retrieve(config, start_time, cursor)
