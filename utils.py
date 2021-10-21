@@ -245,4 +245,3 @@ def handle_results_batch(results_batch, source_name: str, post_action_map: dict,
     for result in results_batch:
         result = apply_post_actions(result, None, post_action_map)
     return dump_results_to_db(results_batch, source_name, cursor)
-
