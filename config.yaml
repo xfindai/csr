@@ -15,7 +15,7 @@ Retrievers:
       - function: anonymize_emails
         apply_to_all: true
         blacklisted_patterns:
-          - "@centinelone.com"
+          - "@acme.com"
         blacklisted_fields:
           - id
         # fields:
@@ -33,8 +33,12 @@ Retrievers:
         password:
 
     post_retrieval_actions:
-      - function: anonymize
+      - function: anonymize_emails
         apply_to_all: true
+        blacklisted_patterns:
+          - "@acme.com"
+        blacklisted_fields:
+          - id
 
   - source_name: JiraSource
     type: Jira
@@ -48,8 +52,12 @@ Retrievers:
         - Project1
 
     post_retrieval_actions:
-      - function: anonymize
+      - function: anonymize_emails
         apply_to_all: true
+        blacklisted_patterns:
+          - "@acme.com"
+        blacklisted_fields:
+          - id
 
 Target:
   host:

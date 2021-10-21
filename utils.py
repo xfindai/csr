@@ -146,16 +146,16 @@ def apply_actions_on_field(key: str, value: str, post_action_map: dict) -> str:
     Returns:
         str: altered value
     """
-    for func in post_action_map['field_to_action_map']['_all'] + \
+    for action in post_action_map['field_to_action_map']['_all'] + \
             post_action_map['field_to_action_map'].get(key, []) or []:
 
-        # If field is blacklisted
+        # If field is blacklisted, continue to the next action
         if key in post_action_map['actions_config'].get('blacklisted_fields', []) or []:
             continue
 
-        value = FUNCTIONS[func](
+        value = FUNCTIONS[action](
             value,
-            post_action_map['actions_config'][func].get('blacklisted_patterns', []) or []
+            post_action_map['actions_config'][action].get('blacklisted_patterns', []) or []
         )
 
     return value
