@@ -2,8 +2,6 @@
 import re
 import string
 import phonenumbers
-
-from pathlib import Path
 from hashlib import sha256
 
 PREFIX = 'MASKED_'
@@ -11,18 +9,9 @@ MIN_TOKEN_LENGTH = 3
 # Paths to default name files:
 
 # Regex to match an email address:
-DEF_EMAIL_REGEX = (
-    r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\""
-    r"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")"
-    r"@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5"
-    r"[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|"
-    r"[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\["
-    r"\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
-)
-
-EMAIL_REGEX = re.compile(DEF_EMAIL_REGEX)
-
+EMAIL_REGEX = re.compile(r'[\w.+-]+@[\w-]+\.[\w.-]+')
 ANONYMIZATION_KEY = 'GO3fsF@WEB3DqWh'
+
 
 def _anonymize_token(token: str) -> str:
     """Anonymize Token
@@ -40,37 +29,32 @@ def _anonymize_token(token: str) -> str:
     return f"{PREFIX}{sha256(string).hexdigest()}"
 
 
-def anonymize(content: str) -> str:
+def anonymize_emails(content: str, blacklisted_patterns: list) -> str:
     """Anonymize
-    Anonymize content field from PII by using requester name.
+    Anonymize all email addresses, except the ones matching any of the blacklisted patterns
+    in content
 
     Args:
-        ticket (str): String to anonymize.
+        content (str): String to anonymize.
+        blacklisted_patterns (str): list of paterns to exclude from anaoymization
 
     Returns:
         (list): List of all the tokens in the ticket
     """
+    for email in EMAIL_REGEX.findall(content):
 
-    def process_token(token: str) -> str:
-        """Anonymize token if in names or if email"""
-        if len(token) < MIN_TOKEN_LENGTH:
-            return token
+        # if email address is blacklisted, continue to the next email address.
+        if any(x.lower() in email for x in blacklisted_patterns):
+            continue
 
-        t = token.lower()
-        # Removes punctuation from beginning and end of word:
-        if t[0] in string.punctuation:
-            t = t[1:]
-        if t[-1] in string.punctuation:
-            t = t[:-1]
-        if EMAIL_REGEX.match(t):
-            # logger.warn(f"ANONYMIZED!! {t}")
-            return _anonymize_token(t)
-        return token
+        email = email.strip(string.punctuation)
+        token = _anonymize_token(email)
+        content = content.replace(email, token)
 
-    return ' '.join(process_token(t) for t in content.split())
+    return content
 
 
-def anonymize_phone_numbers(content: str) -> str:
+def anonymize_phone_numbers(content: str, blacklisted_patterns: list) -> str:
     """Anonymize_phone_numbers
     Detects and replaces phone numbers with a anonymizaion token
     Args:
@@ -80,11 +64,17 @@ def anonymize_phone_numbers(content: str) -> str:
         str: Anonymized String
     """
     for match in phonenumbers.PhoneNumberMatcher(content, "US"):
-        token = _anonymize_token(match.number)
-        content.replace(match.number, token)
+
+        # If number is blacklisted, continue to the next number
+        if any(x.lower() in match.raw_string for x in blacklisted_patterns):
+            continue
+
+        token = _anonymize_token(match.raw_string)
+        content = content.replace(match.raw_string, token)
     return content
 
 
-FUNCTIONS = {'anonymize': anonymize,
-             'anonymize_phone_numbers': anonymize_phone_numbers
-            }
+FUNCTIONS = {
+    'anonymize_emails': anonymize_emails,
+    'anonymize_phone_numbers': anonymize_phone_numbers
+}

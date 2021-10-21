@@ -78,9 +78,11 @@ def dump_date():
     """Dump date
     dumps the date of the latest successfull pull to file
     """
+    TIME_DELTA_MINS = 15
     try:
         file = open('pull_history.txt', 'w')
-        file.write(datetime.datetime.now().strftime("%m/%d/%Y"))
+        time = datetime.datetime.now() - datetime.timedelta(minutes=TIME_DELTA_MINS)
+        file.write(time.strftime("%m/%d/%Y, %H:%M:%S"))
         return True
     except Exception:
         return False
@@ -115,37 +117,48 @@ def prepare_post_actions_field_map(config: list) -> dict:
         config (list): configuration dict
 
     Returns:
-        dict: the post actions field map
+        dict: the post actions field -> key:str - value[callable1, ...]
     """
-    result = defaultdict(list)
+    field_to_action_map = defaultdict(list)
+    actions_config = {}
 
     for action in config:
         function_name = action.get('function')
+        actions_config[function_name] = action
         if action.get('apply_to_all'):
-            result['_all'].append(function_name)
+            field_to_action_map['_all'].append(function_name)
         else:
             for field in action.get('fields', []) or []:
-                result[field].append(function_name)
+                field_to_action_map[field].append(function_name)
 
-    return result
+    return {'field_to_action_map': field_to_action_map, 'actions_config': actions_config}
 
 
-def apply_actions_on_field(k: str, v: str, post_action_map: dict) -> str:
+def apply_actions_on_field(key: str, value: str, post_action_map: dict) -> str:
     """ apply actions on fields
     applies anonymization function to field value by its key
 
     Args:
-        k (str): jey of the field
-        v (str): value if the field
+        key (str): jey of the field
+        value (str): value if the field
         post_action_map (dict): field to function mapper
 
     Returns:
         str: altered value
     """
-    for func in post_action_map['_all'] + post_action_map.get(k, []) or []:
-        v = FUNCTIONS[func](v)
+    for func in post_action_map['field_to_action_map']['_all'] + \
+            post_action_map['field_to_action_map'].get(key, []) or []:
 
-    return v
+        # If field is blacklisted
+        if key in post_action_map['actions_config'].get('blacklisted_fields', []) or []:
+            continue
+
+        value = FUNCTIONS[func](
+            value,
+            post_action_map['actions_config'][func].get('blacklisted_patterns', []) or []
+        )
+
+    return value
 
 
 def apply_post_actions(data: object, key: str = None, post_action_map: dict = None) -> dict:
@@ -232,3 +245,4 @@ def handle_results_batch(results_batch, source_name: str, post_action_map: dict,
     for result in results_batch:
         result = apply_post_actions(result, None, post_action_map)
     return dump_results_to_db(results_batch, source_name, cursor)
+

@@ -12,8 +12,12 @@ Retrievers:
     excempt_fields:
 
     post_retrieval_actions:
-      - function: anonymize
+      - function: anonymize_emails
         apply_to_all: true
+        blacklisted_patterns:
+          - "@centinelone.com"
+        blacklisted_fields:
+          - id
         # fields:
         #   - field 1
         #   - field 2

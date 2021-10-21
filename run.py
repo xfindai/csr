@@ -9,6 +9,9 @@ import sys
 # main retrieving loop
 def retrieve(config: dict, start_time: dict, cursor):
 
+    # Dumps date of last sussesfull pull
+    dump_date()
+
     for retriever_config in config['Retrievers']:
         total_success = total_failures = 0
 
@@ -21,7 +24,6 @@ def retrieve(config: dict, start_time: dict, cursor):
         post_action_map = prepare_post_actions_field_map(retriever_config['post_retrieval_actions'])
         # Get the retriever class
         retriever_class = RETRIEVERS.get(retriever_config['type'].lower())
-
         # No retriever was found, proceed to the next source
         if not retriever_class:
             print(f"Retriever {retriever_config['type']} not found")
@@ -43,11 +45,8 @@ def retrieve(config: dict, start_time: dict, cursor):
 
         print()
         print(
-            f"Done pulling {retriever_config['source_name']}. Successfully pulled "\
+            f"Done pulling {retriever_config['source_name']}. Successfully pulled "
             f"{total_success} items, {total_failures} items failed")
-
-    # Dumps date of last sussesfull pull
-    dump_date()
 
 
 if __name__ == '__main__':
@@ -58,7 +57,7 @@ if __name__ == '__main__':
     config = read_yaml(options.config)
     if not config:
         print(f'could not open configuration file {options.config}')
-        sys.exit(0)
+        sys.exit(1)
 
     start_time = get_start_time(options.starttime)
 
@@ -67,6 +66,11 @@ if __name__ == '__main__':
         cursor = conn.cursor()
     except Exception as e:
         print(e)
-        sys.exit(0)
+        sys.exit(1)
 
-    retrieve(config, start_time, cursor)
+    try:
+        retrieve(config, start_time, cursor)
+    except Exception as e:
+        print('Pull failed!')
+        print(e)
+        sys.exit(1)
