@@ -199,7 +199,7 @@ def dump_results_to_db(results: list, source_name: str, cursor):
     for item in results:
 
         iid = item.get('id')
-        title = item.get('title') or item.get('subject')
+        title = item.get('title') or item.get('subject') or ''
         created_at = get_create_at(item)
         deleted = item.get('deleted', False) or False
 
@@ -231,6 +231,12 @@ def handle_results_batch(results_batch: Iterable, source_name: str, post_action_
     Returns:
         tuple: number of successfully handled items, number of failed items
     """
+
     for result in results_batch:
-        result = apply_post_actions(result, None, post_action_map)
+        try:
+            result = apply_post_actions(result, None, post_action_map)
+        except Exception as e:
+            LOG.error('Could not apply post action on item')
+            LOG.debug(e)
+
     return dump_results_to_db(results_batch, source_name, cursor)
