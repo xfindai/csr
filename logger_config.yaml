@@ -21,7 +21,9 @@ handlers:
     level: ERROR
 
   file:
-    class: logging.FileHandler
-    filename: retriever.log
+    class: logging.handlers.RotatingFileHandler
+    maxBytes: 1048576
+    backupCount: 100
+    filename: logs/retriever.log
     formatter: file_formatter
     level: DEBUG

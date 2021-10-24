@@ -10,7 +10,7 @@ import argparse
 import psycopg2
 from psycopg2.extras import Json
 from collections import defaultdict
-from post_actions import FUNCTIONS
+from actions import FUNCTIONS
 
 LOG = logging.getLogger("root")
 
@@ -229,7 +229,8 @@ def dump_results_to_db(results: list, source_name: str, cursor):
             cursor.execute('commit')
             success += 1
         except Exception as e:
-            print(e)
+            LOG.error('Got error while inserting a line to DB')
+            LOG.debug(e)
             failures += 1
 
     return success, failures
