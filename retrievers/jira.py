@@ -48,6 +48,7 @@ class Jira():
 
     def __init__(self, source, start_time, ignore_deleted, credentials, projects=None,
                  max_items=None):
+        self._logger = logging.getLogger('root')
         self._ignore_deleted = ignore_deleted
         self._start_time = start_time
         self._credentials = credentials

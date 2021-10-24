@@ -95,7 +95,7 @@ def create_cursor(conn: psycopg2.connect, name: str = "default", itersize: int =
     return cursor
 
 
-def prepare_post_actions_field_map(config: list) -> dict:
+def prepare_post_actions_field_map(config: list) -> dict[str, str]:
     """Preparepost post actions field map
     Constructs a dictionary with fields as keys. The values are lists of functions to be applied
     to the field
@@ -111,6 +111,11 @@ def prepare_post_actions_field_map(config: list) -> dict:
 
     for action in config:
         function_name = action.get('function')
+
+        if function_name not in FUNCTIONS:
+            # If no such function exists in FUNCTIONS, continue
+            continue
+
         actions_config[function_name] = action
         if action.get('apply_to_all'):
             field_to_action_map['_all'].append(function_name)
@@ -135,6 +140,10 @@ def apply_actions_on_field(key: str, value: str, post_action_map: dict) -> str:
     """
     for action in post_action_map['field_to_action_map']['_all'] + \
             post_action_map['field_to_action_map'].get(key, []) or []:
+
+        if action not in FUNCTIONS:
+            # no such action in function map
+            continue
 
         # If field is blacklisted, continue to the next action
         if key in post_action_map['actions_config'].get('blacklisted_fields', []) or []:

@@ -17,6 +17,7 @@ EXIT_CODE_ON_ERR = 1
 # main retrieving loop
 def retrieve(config: dict, start_time: dict, cursor):
 
+    LOG.info('Start retriever task')
     # Dumps date of last sussesfull pull
     dump_date()
 
@@ -28,7 +29,7 @@ def retrieve(config: dict, start_time: dict, cursor):
             LOG.info(f"Skipping {retriever_config['source_name']} as it is disabled in config")
             continue
 
-        LOG.info(f"Starting pulling {retriever_config['source_name']}")
+        LOG.info(f"Start pulling {retriever_config['source_name']}")
         # Prepare post actions instructions map
         post_action_map = prepare_post_actions_field_map(retriever_config['post_retrieval_actions'])
         # Get the retriever class
@@ -39,21 +40,34 @@ def retrieve(config: dict, start_time: dict, cursor):
             continue
 
         # Initiate the retriever with config params
-        retriever = retriever_class(source=retriever_config['source_name'], start_time=start_time,
-                                    ignore_deleted=True, **retriever_config['params'])
+        try:
+            retriever = retriever_class(source=retriever_config['source_name'],
+                                        start_time=start_time, ignore_deleted=True,
+                                        **retriever_config['params'])
+        except Exception as e:
+            LOG.error(f"Got error while initializing retriever {retriever_config['source_name']}")
+            LOG.debug(e)
+            continue
 
         # Start iterating over the retrieved batches, and handle them
-        for results_batch in retriever:
-            success, failures = handle_results_batch(results_batch, retriever_config['source_name'],
-                                                     post_action_map, cursor)
-            total_success += success
-            total_failures += failures
-            print(f'{total_success=} {total_failures=}', end='\r')
+        try:
+            for results_batch in retriever:
+                success, failures = handle_results_batch(results_batch,
+                                                         retriever_config['source_name'],
+                                                         post_action_map, cursor)
+                total_success += success
+                total_failures += failures
+                print(f'{total_success=} {total_failures=}', end='\r')
 
-        print()
-        LOG.info(
-            f"Done pulling {retriever_config['source_name']}. Successfully pulled "
-            f"{total_success} items, {total_failures} items failed")
+            print()
+            LOG.info(
+                f"Done pulling {retriever_config['source_name']}. Successfully pulled "
+                f"{total_success} items, {total_failures} items failed")
+        except Exception as e:
+            LOG.error(f"Got error while pulling items for {retriever_config['source_name']}")
+            LOG.debug(e)
+
+    LOG.info('Retriever task completed!')
 
 
 def create_argparser() -> argparse.ArgumentParser:

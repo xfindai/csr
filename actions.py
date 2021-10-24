@@ -44,7 +44,7 @@ def anonymize_emails(content: str, blacklisted_patterns: list) -> str:
     for email in EMAIL_REGEX.findall(content):
 
         # if email address is blacklisted, continue to the next email address.
-        if any(x.lower() in email for x in blacklisted_patterns):
+        if any(x.lower() in email.lower() for x in blacklisted_patterns):
             continue
 
         email = email.strip(string.punctuation)
@@ -72,6 +72,11 @@ def anonymize_phone_numbers(content: str, blacklisted_patterns: list) -> str:
         token = _anonymize_token(match.raw_string)
         content = content.replace(match.raw_string, token)
     return content
+
+
+###############################################################################################
+# Add your custom functions here. When done, add your function to "FUNCTIONS" dictionary      #
+###############################################################################################
 
 
 FUNCTIONS = {
