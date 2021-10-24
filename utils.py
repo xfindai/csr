@@ -6,14 +6,16 @@ import logging
 import dateutil
 import datetime
 from pathlib import Path
-import argparse
 import psycopg2
 from psycopg2.extras import Json
 from collections import defaultdict
 from actions import FUNCTIONS
+from collections.abc import Iterable
 
 LOG = logging.getLogger("root")
-
+DATE_DUMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+PULL_TIME_DELTA_MINS = 15
+PULL_TIME_DELTA_DAYS = 1
 
 def read_yaml(path: Path) -> dict:
     """Reads YAML file
@@ -35,28 +37,9 @@ def read_yaml(path: Path) -> dict:
         return None
 
 
-def create_argparser() -> argparse.ArgumentParser:
-    """Parses and returns command line arguments"""
-    HELP_CONFIG = 'Sources configuration path'
-    HELP_STARTTIME = 'Specify from what time to pull data'
-    HELP_IGNORE_DEL = 'Ignore deleted items'
-    HELP_MAXITEMS = 'Number of max items to pull (used for testing)'
-    HELP_UPD_FIELD = 'update specific field'
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('config', type=str, help=HELP_CONFIG)
-    parser.add_argument('-s', '--starttime', type=str, help=HELP_STARTTIME)
-    parser.add_argument('--ignore-deleted', action='store_true', help=HELP_IGNORE_DEL)
-    parser.add_argument('--max-items', type=int, help=HELP_MAXITEMS)
-    parser.add_argument('-u', '--update-fields', nargs='+', default=[], help=HELP_UPD_FIELD)
-
-    return parser
-
-
 def get_start_time(start_time: str = None) -> datetime:
     """Get Start Time
-    If a data update record exists returns the created_at time after subtraction the default
+    If a data update record exists returns the created_at time after subtraction of the default
     overlap time (in minutes) from it. If no data update record exists, returns default start time.
 
     Arguments:
@@ -70,26 +53,28 @@ def get_start_time(start_time: str = None) -> datetime:
         return dateutil.parser.parse(start_time)
 
     try:
-        file = open('pull_history.txt', 'r')
-        date_str = file.readline()
-        return dateutil.parser.parse(date_str)
+        with open('pull_history.txt', 'r') as file:
+            date_str = file.readline()
+            return dateutil.parser.parse(date_str) - \
+                datetime.timedelta(minutes=PULL_TIME_DELTA_MINS)
     except Exception:
         pass
 
-    return datetime.datetime.now() - datetime.timedelta(days=1)
+    return datetime.datetime.now() - datetime.timedelta(days=PULL_TIME_DELTA_DAYS)
 
 
 def dump_date():
     """Dump date
     dumps the date of the latest successfull pull to file
     """
-    TIME_DELTA_MINS = 15
     try:
-        file = open('pull_history.txt', 'w')
-        time = datetime.datetime.now() - datetime.timedelta(minutes=TIME_DELTA_MINS)
-        file.write(time.strftime("%m/%d/%Y, %H:%M:%S"))
+        with open('pull_history.txt', 'w') as file:
+            time = datetime.datetime.now()
+            file.write(time.strftime(DATE_DUMP_FORMAT))
         return True
-    except Exception:
+    except Exception as e:
+        LOG.error('Got error while writing to pull_history.txt file!')
+        LOG.debug(e)
         return False
 
 
@@ -105,10 +90,7 @@ def create_cursor(conn: psycopg2.connect, name: str = "default", itersize: int =
     Returns:
         psycopg2.extras.DictCursor: cursor
     """
-    cursor = conn.cursor(
-        name=name,
-        cursor_factory=psycopg2.extras.DictCursor
-    )
+    cursor = conn.cursor(name=name, cursor_factory=psycopg2.extras.DictCursor)
     cursor.itersize = itersize
     return cursor
 
@@ -175,7 +157,7 @@ def apply_post_actions(data: object, key: str = None, post_action_map: dict = No
         key (str, optional): Key of the sub dictionary. Defaults to None.
         post_action_map (dict, optional): post action dict which maps fields to functions.
 
-        Returns:
+    Returns:
         dict: the altered dictionary
     """
 
@@ -236,17 +218,18 @@ def dump_results_to_db(results: list, source_name: str, cursor):
     return success, failures
 
 
-def handle_results_batch(results_batch, source_name: str, post_action_map: dict, cursor):
+def handle_results_batch(results_batch: Iterable, source_name: str, post_action_map: dict,
+                         cursor) -> tuple[int, int]:
     """Handle results batch
-    handles a bath of results. Applies post actions and dumps to db
+    Handles a batch of results. For each batch item, applies post actions and dumps item to db.
     Args:
-        results_batch (Iterator): [description]
+        results_batch (Iterable): [description]
         source_name (str): [description]
         post_action_map (dict): [description]
-        cursor ([type]): [description]
+        cursor (psycopg2.connect.Cursor): DB connection cursor
 
     Returns:
-        [type]: [description]
+        tuple: number of successfully handled items, number of failed items
     """
     for result in results_batch:
         result = apply_post_actions(result, None, post_action_map)
