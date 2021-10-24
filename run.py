@@ -8,6 +8,8 @@ from retrievers import RETRIEVERS
 from utils import read_yaml, get_start_time, prepare_post_actions_field_map, \
     dump_date, handle_results_batch
 
+LOGGER_CONFIG_FILE_NAME = 'logger_config.yaml'
+logging.config.dictConfig(read_yaml(LOGGER_CONFIG_FILE_NAME))
 LOG = logging.getLogger("root")
 EXIT_CODE_ON_ERR = 1
 
@@ -76,14 +78,12 @@ def create_argparser() -> argparse.ArgumentParser:
 if __name__ == '__main__':
     # Parses runtime arguments and runs retriever
 
-    logging.config.dictConfig(read_yaml('logger_config.yaml'))
-
     options = create_argparser().parse_args()
 
     config = read_yaml(options.config)
     if not config:
         LOG.error(f'Could not open configuration file {options.config}')
-        sys.exit(1)
+        sys.exit(EXIT_CODE_ON_ERR)
 
     start_time = get_start_time(options.starttime)
 

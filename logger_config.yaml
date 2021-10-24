@@ -18,7 +18,8 @@ handlers:
   console:
     class: logging.StreamHandler
     formatter: std_out
-    level: ERROR
+    level: INFO
+    stream: ext://sys.stdout
 
   file:
     class: logging.handlers.RotatingFileHandler

@@ -219,7 +219,7 @@ def dump_results_to_db(results: list, source_name: str, cursor):
 
 
 def handle_results_batch(results_batch: Iterable, source_name: str, post_action_map: dict,
-                         cursor) -> tuple[int, int]:
+                         cursor: object) -> tuple[int, int]:
     """Handle results batch
     Handles a batch of results. For each batch item, applies post actions and dumps item to db.
     Args:
