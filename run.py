@@ -60,17 +60,13 @@ def create_argparser() -> argparse.ArgumentParser:
     """Parses and returns command line arguments"""
     HELP_CONFIG = 'Sources configuration path'
     HELP_STARTTIME = 'Specify from what time to pull data'
-    HELP_IGNORE_DEL = 'Ignore deleted items'
     HELP_MAXITEMS = 'Number of max items to pull (used for testing)'
-    HELP_UPD_FIELD = 'update specific field'
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('config', type=str, help=HELP_CONFIG)
     parser.add_argument('-s', '--starttime', type=str, help=HELP_STARTTIME)
-    parser.add_argument('--ignore-deleted', action='store_true', help=HELP_IGNORE_DEL)
     parser.add_argument('--max-items', type=int, help=HELP_MAXITEMS)
-    parser.add_argument('-u', '--update-fields', nargs='+', default=[], help=HELP_UPD_FIELD)
 
     return parser
 
