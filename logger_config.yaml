@@ -1,0 +1,27 @@
+version: 1
+root:
+  handlers:
+  - console
+  - file
+  level: DEBUG
+
+formatters:
+  std_out:
+    format: "%(asctime)s : %(levelname)s - %(message)s"
+    datefmt: "%d-%m-%Y %I:%M:%S"
+
+  file_formatter:
+    format: "%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d - %(message)s"
+    datefmt: "%d-%m-%Y %I:%M:%S"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: std_out
+    level: ERROR
+
+  file:
+    class: logging.FileHandler
+    filename: retriever.log
+    formatter: file_formatter
+    level: DEBUG

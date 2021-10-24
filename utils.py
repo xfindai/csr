@@ -2,6 +2,7 @@ import os
 import yaml
 import json
 import pytz
+import logging
 import dateutil
 import datetime
 from pathlib import Path
@@ -10,6 +11,8 @@ import psycopg2
 from psycopg2.extras import Json
 from collections import defaultdict
 from post_actions import FUNCTIONS
+
+LOG = logging.getLogger("root")
 
 
 def read_yaml(path: Path) -> dict:
@@ -26,7 +29,9 @@ def read_yaml(path: Path) -> dict:
         with open(path, 'r', encoding='utf-8') as fs:
             data = yaml.safe_load(fs)
         return data
-    except Exception:
+    except Exception as e:
+        LOG.error('Could not read yaml file %s', path)
+        LOG.debug(e)
         return None
 
 

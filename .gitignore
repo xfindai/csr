@@ -3,3 +3,4 @@ __pycache__/
 .vscode/
 pull_history.txt
 dev_config.yaml
+*.log

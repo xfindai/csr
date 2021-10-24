@@ -1,9 +1,13 @@
+import sys
+import psycopg2
+import logging
+import logging.config
+from retrievers import RETRIEVERS
+
 from utils import read_yaml, create_argparser, get_start_time, prepare_post_actions_field_map, \
     dump_date, handle_results_batch
 
-from retrievers import RETRIEVERS
-import psycopg2
-import sys
+LOG = logging.getLogger("root")
 
 
 # main retrieving loop
@@ -19,14 +23,14 @@ def retrieve(config: dict, start_time: dict, cursor):
         if not retriever_config.get('enabled', False):
             continue
 
-        print(f"Starting pulling {retriever_config['source_name']}")
+        LOG.info(f"Starting pulling {retriever_config['source_name']}")
         # Prepare post actions instructions map
         post_action_map = prepare_post_actions_field_map(retriever_config['post_retrieval_actions'])
         # Get the retriever class
         retriever_class = RETRIEVERS.get(retriever_config['type'].lower())
         # No retriever was found, proceed to the next source
         if not retriever_class:
-            print(f"Retriever {retriever_config['type']} not found")
+            LOG.warning(f"Retriever {retriever_config['type']} not found")
             continue
 
         # Initiate the retriever with config params
@@ -44,7 +48,7 @@ def retrieve(config: dict, start_time: dict, cursor):
             print(f'{total_success=} {total_failures=}', end='\r')
 
         print()
-        print(
+        LOG.info(
             f"Done pulling {retriever_config['source_name']}. Successfully pulled "
             f"{total_success} items, {total_failures} items failed")
 
@@ -52,11 +56,13 @@ def retrieve(config: dict, start_time: dict, cursor):
 if __name__ == '__main__':
     # Parses runtime arguments and runs retriever
 
+    logging.config.dictConfig(read_yaml('logger_config.yaml'))
+
     options = create_argparser().parse_args()
 
     config = read_yaml(options.config)
     if not config:
-        print(f'could not open configuration file {options.config}')
+        LOG.error(f'Could not open configuration file {options.config}')
         sys.exit(1)
 
     start_time = get_start_time(options.starttime)
@@ -65,12 +71,13 @@ if __name__ == '__main__':
         conn = psycopg2.connect(**config['Target'])
         cursor = conn.cursor()
     except Exception as e:
-        print(e)
+        LOG.error('Could not establish connection to target database!')
+        LOG.debug(e)
         sys.exit(1)
 
     try:
         retrieve(config, start_time, cursor)
     except Exception as e:
-        print('Pull failed!')
-        print(e)
+        LOG.error('Pull failed!')
+        LOG.debug(e)
         sys.exit(1)
