@@ -8,11 +8,14 @@ Retrievers:
         token:
         subdomain:
 
-    custom_fields:
-    excempt_fields:
-
     post_retrieval_actions:
       - function: anonymize_emails
+        apply_to_all: true
+        blacklisted_patterns:
+          - "@acme.com"
+        blacklisted_fields:
+          - id
+      - function: anonymize_phone_numbers
         apply_to_all: true
         blacklisted_patterns:
           - "@acme.com"
@@ -39,6 +42,12 @@ Retrievers:
           - "@acme.com"
         blacklisted_fields:
           - id
+      - function: anonymize_phone_numbers
+        apply_to_all: true
+        blacklisted_patterns:
+          - "@acme.com"
+        blacklisted_fields:
+          - id
 
   - source_name: JiraSource
     type: Jira
@@ -53,6 +62,12 @@ Retrievers:
 
     post_retrieval_actions:
       - function: anonymize_emails
+        apply_to_all: true
+        blacklisted_patterns:
+          - "@acme.com"
+        blacklisted_fields:
+          - id
+      - function: anonymize_phone_numbers
         apply_to_all: true
         blacklisted_patterns:
           - "@acme.com"
