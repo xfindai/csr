@@ -56,7 +56,7 @@ def anonymize_emails(content: str, blacklisted_patterns: list) -> str:
 
 def anonymize_phone_numbers(content: str, blacklisted_patterns: list) -> str:
     """Anonymize_phone_numbers
-    Detects and replaces phone numbers with a anonymizaion token
+    Detects and replaces phone numbers with an anonymizaion token
     Args:
         content (str): String to anonymize.
 

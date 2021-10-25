@@ -20,7 +20,7 @@ from zenpy import Zenpy
 from typing import Generator
 
 
-logger = logging.getLogger('main')
+logger = logging.getLogger('root')
 
 
 COMMENT_FIELDS = ["author_id", "body", "id", "public", "type", "created_at"]

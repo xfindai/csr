@@ -199,7 +199,7 @@ def dump_results_to_db(results: list, source_name: str, cursor):
     success = failures = 0
 
     def get_create_at(item):
-        """sets the created_at field with the correct UTC timezone"""
+        """sets the created_at field with UTC timezone"""
         created_at = dateutil.parser.parse(item['created_at'])
         if not created_at.tzinfo:
             created_at = pytz.utc.localize(created_at)
