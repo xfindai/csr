@@ -95,7 +95,7 @@ def create_cursor(conn: psycopg2.connect, name: str = "default", itersize: int =
     return cursor
 
 
-def prepare_post_actions_field_map(config: list) -> dict[str, str]:
+def prepare_post_actions_field_map(config: list) -> dict:
     """Preparepost post actions field map
     Constructs a dictionary with fields as keys. The values are lists of functions to be applied
     to the field
