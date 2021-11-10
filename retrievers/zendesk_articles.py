@@ -17,7 +17,7 @@ import logging
 import requests
 
 from datetime import datetime
-
+from utils import set_deleted
 
 logger = logging.getLogger('main')
 DEF_SOURCE = 'ArticleSource'
@@ -38,6 +38,7 @@ class ZendeskArticles():
         self._ignore_deleted = ignore_deleted
         self._start_time = start_time
         self._subdomain = subdomain
+        self._source = source
         self._locale = locale or 'en-us'
         self._credentials = credentials
         self._max_items = max_items

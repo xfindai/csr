@@ -1,4 +1,4 @@
-import os
+import sys
 import yaml
 import json
 import pytz
@@ -16,6 +16,7 @@ LOG = logging.getLogger("root")
 DATE_DUMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 PULL_TIME_DELTA_MINS = 15
 PULL_TIME_DELTA_DAYS = 1
+EXIT_CODE_ON_ERR = 1
 
 def read_yaml(path: Path) -> dict:
     """Reads YAML file
@@ -249,3 +250,60 @@ def handle_results_batch(results_batch: Iterable, source_name: str, post_action_
             LOG.debug(e)
 
     return dump_results_to_db(results_batch, source_name, cursor)
+
+
+def set_deleted(items_id, source):
+    """Set Deleted
+    Set the ids of all the items which are not in the received items list as deleted
+
+    Args:
+        items_id (list): List of al the ids of all the items which are not marked as deleted
+        source (str): Name of current source
+    """
+
+    BATCH_SIZE = 100
+    cursor = DBconnection().get_cursor()
+
+    strsql = f"SELECT count(*) from rawitem WHERE source='{source}'"
+    cursor.execute(strsql)
+    total_deleted_items = cursor.fetchone()[0] - len(items_id)
+
+    strsql = f"UPDATE rawitem SET deleted=True WHERE source='{source}'"
+    cursor.execute(strsql)
+
+    for i in range(0, len(items_id), BATCH_SIZE):
+        batch = ','.join([f"'{str(x)}'" for x in items_id[i:i + BATCH_SIZE]])
+        strsql = f"UPDATE rawitem SET deleted=false WHERE item_id in ({batch}) "\
+                 f"AND source='{source}'"
+        cursor.execute(strsql)
+
+    LOG.info("Done Marking %s items as deleted.", total_deleted_items)
+
+
+class Singleton(type):
+    '''Singelton Metaclass'''
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class DBconnection(metaclass=Singleton):
+    '''Singelton DB connection class'''
+
+    def __init__(self, credentials) -> None:
+        try:
+            self._conn = psycopg2.connect(**credentials)
+            self._cursor = self._conn.cursor()
+        except Exception as e:
+            LOG.error('Could not establish connection to target database!')
+            LOG.debug(e)
+            sys.exit(EXIT_CODE_ON_ERR)
+
+    def get_cursor(self):
+        """Get cursor
+        Returns psycopg2 connection cursor
+        """
+        return self._cursor

@@ -6,7 +6,7 @@ import logging.config
 from retrievers import RETRIEVERS
 
 from utils import read_yaml, get_start_time, prepare_post_actions_field_map, \
-    dump_date, handle_results_batch
+    dump_date, handle_results_batch, DBconnection
 
 LOGGER_CONFIG_FILE_NAME = 'logger_config.yaml'
 logging.config.dictConfig(read_yaml(LOGGER_CONFIG_FILE_NAME))
@@ -15,7 +15,7 @@ EXIT_CODE_ON_ERR = 1
 
 
 # main retrieving loop
-def retrieve(config: dict, start_time: dict, cursor):
+def retrieve(config: dict, start_time: dict, max_items: int, cursor):
 
     LOG.info('Start retriever task')
     # Dumps date of last sussesfull pull
@@ -43,6 +43,7 @@ def retrieve(config: dict, start_time: dict, cursor):
         try:
             retriever = retriever_class(source=retriever_config['source_name'],
                                         start_time=start_time, ignore_deleted=True,
+                                        max_items=max_items,
                                         **retriever_config['params'])
         except Exception as e:
             LOG.error(f"Got error while initializing retriever {retriever_config['source_name']}")
@@ -97,16 +98,11 @@ if __name__ == '__main__':
 
     start_time = get_start_time(options.starttime)
 
-    try:
-        conn = psycopg2.connect(**config['Target'])
-        cursor = conn.cursor()
-    except Exception as e:
-        LOG.error('Could not establish connection to target database!')
-        LOG.debug(e)
-        sys.exit(EXIT_CODE_ON_ERR)
+    cursor = DBconnection(config['Target']).get_cursor()
+    max_items = options.max_items
 
     try:
-        retrieve(config, start_time, cursor)
+        retrieve(config, start_time, max_items, cursor)
     except Exception as e:
         LOG.error('Pull failed!')
         LOG.debug(e)
