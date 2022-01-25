@@ -18,6 +18,7 @@ PULL_TIME_DELTA_MINS = 15
 PULL_TIME_DELTA_DAYS = 1
 EXIT_CODE_ON_ERR = 1
 
+
 def read_yaml(path: Path) -> dict:
     """Reads YAML file
     Returns YAML file as dictionary.
@@ -210,7 +211,7 @@ def dump_results_to_db(results: list, source_name: str, cursor):
 
         iid = item.get('id')
         title = item.get('title') or item.get('subject') or ''
-        created_at = get_create_at(item)
+        created_at = datetime.datetime.utcnow()
         deleted = item.get('deleted', False) or False
 
         sql = "INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, "\
