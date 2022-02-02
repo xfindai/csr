@@ -29,10 +29,10 @@ Retrievers:
     type: ZendeskArticles
     enabled: true
     params:
-      subdomain:
+      subdomain: xfindai
       locale: en-us
       credentials:
-        username:
+        username: xfinduser@xfind.ai/token
         password:
 
     post_retrieval_actions:
