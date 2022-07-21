@@ -216,7 +216,7 @@ def dump_results_to_db(results: list, source_name: str, cursor):
 
         sql = "INSERT INTO rawitem (source, item_id, title, created_at, json, dataupdate_id, "\
               "deleted) VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (source, item_id) "\
-              "DO UPDATE SET (title, json) = (EXCLUDED.title, EXCLUDED.json)"
+              "DO UPDATE SET (created_at, title, json) = (EXCLUDED.created_at, EXCLUDED.title, EXCLUDED.json)"
         try:
             cursor.execute(sql, (source_name, iid, title, created_at, Json(item), 1, deleted))
             cursor.execute('commit')
